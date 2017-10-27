@@ -49,7 +49,7 @@ public class JfinalConfig extends JFinalConfig {
 		// 加载少量必要配置，随后可用PropKit.get(...)获取值
 		PropKit.use("a_little_config.txt");
 		me.setDevMode(PropKit.getBoolean("devMode", false));
-		//me.setError500View("/view/common/500.html");
+		me.setError500View("/view/common/500.html");
 		me.setError404View("/view/common/404.html");
 		me.setMaxPostSize(1024*1024*1024);
 	}
