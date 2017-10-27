@@ -2,6 +2,7 @@ package com.jfinal.common.gen;
 
 import javax.sql.DataSource;
 
+import com.jfinal.base.JfinalMetaBuilder;
 import com.jfinal.common.config.JfinalConfig;
 import com.jfinal.kit.PathKit;
 import com.jfinal.kit.PropKit;
@@ -49,6 +50,18 @@ public class _JfinalGenerator {
 		                modelPackageName, modelOutputDir,
 		                servicePackageName, serviceOutputDir,
 		                controllerPackageName, controllerOutputDir);
+		
+		// 设置自定义的meta builder
+		JfinalMetaBuilder jfinalMetaBuilder = new JfinalMetaBuilder(getDataSource());
+		
+		//设置不需要添加到model的表
+		//jfinalMetaBuilder.addExcludedTable("");
+		
+		//设置只需要添加到model的表
+		//jfinalMetaBuilder.addIncludedTable("");
+		
+		//设置MetaBuilder
+		//generator.setMetaBuilder(jfinalMetaBuilder);
 		// 设置是否生成链式 setter 方法
 		generator.setGenerateChainSetter(false);
 		// 添加不需要生成的表名
