@@ -31,7 +31,9 @@ public abstract class BaseActionController<T extends Model<T>> extends Controlle
 
     public void save() {
         try {
-            getBean(getDao().getClass(), "").save();
+            T bean = (T) getBean(getDao().getClass(), "");
+            updateBean(bean);
+            bean.save();
             log.info("=== save model successfully.======");
             renderSucessResult();
         } catch (Exception e) {
@@ -43,10 +45,13 @@ public abstract class BaseActionController<T extends Model<T>> extends Controlle
 
     public void list() {
         try {
-            String columns = getPara("columns");
+            String columns = getPara("columns", "*");
+            columns = escapeColumns(columns);
             String orderBy = StringUtils.replace(StringUtils.defaultString(getPara("orderBy"), ""), "_", "asc");
             Map<String, Object> params = genSqlParamMap();
+            updateSqlParamMap(params);
             List<T> models = getService().findLoadColumns(columns, params, orderBy);
+            updateSearchResult(models);
             log.info("=== list model successfully.======");
             renderSucessResult(models);
         } catch (Exception e) {
@@ -55,13 +60,49 @@ public abstract class BaseActionController<T extends Model<T>> extends Controlle
         }
     }
 
+    protected void updateSearchResult(List<T> models) {
+	}
+
+	private String escapeColumns(String columns) {
+        if (StringUtils.isBlank(columns) || StringUtils.equals("*", columns.trim())) {
+            return columns;
+        }
+        List<String> escapedColumns = new ArrayList<>();
+        for (String column : columns.split(",")) {
+            System.out.println("======column:"+column);
+            if (StringUtils.contains(column, ".")) {
+                escapedColumns.add(column + " `" + column + "`");
+            } else {
+                escapedColumns.add("t." + column + " `" + column + "`");
+            }
+        }
+        return StringUtils.join(escapedColumns, ",");
+    }
+    
+
+    
+    /**
+     * update the sqlParams in child actions
+     */
+    protected void updateSqlParamMap(Map<String, Object> sqlParams) {
+        
+    }
+
+    /**
+     * update the sqlParams in child actions
+     */
+    protected void updateBean(T bean) {
+    }
+    
     public void page() {
         try {
             String columns = getPara("columns", "*");
+            columns = escapeColumns(columns);
             String orderBy = StringUtils.replace(StringUtils.defaultString(getPara("orderBy"), ""), "_", "asc");
             Integer pageNumber = getParaToInt("pageNumber", 1);
             Integer pageSize = getParaToInt("pageSize", 20);
             Map<String, Object> params = genSqlParamMap();
+            updateSqlParamMap(params);
             Page<T> page = getService().pageLoadColumns(columns, params, "and", orderBy, pageNumber, pageSize);
             renderSucessResult(page);
         } catch (Exception e) {
@@ -72,9 +113,11 @@ public abstract class BaseActionController<T extends Model<T>> extends Controlle
     
     public void get() {
         try {
-            String columns = getPara("columns");
+            String columns = getPara("columns", "*");
+            columns = escapeColumns(columns);
             String orderBy = StringUtils.replace(StringUtils.defaultString(getPara("orderBy"), ""), "_", "asc");
             Map<String, Object> params = genSqlParamMap();
+            updateSqlParamMap(params);
             T model = getService().findFirstLoadColumns(columns, params, orderBy);
             renderSucessResult(model);
         } catch (Exception e) {
@@ -84,12 +127,16 @@ public abstract class BaseActionController<T extends Model<T>> extends Controlle
     }
     
     public void update() {
-        getBean(getDao().getClass(), "").update();
+        T bean = (T) getBean(getDao().getClass(), "");
+        updateBean(bean);
+        bean.update();
         renderSucessResult();
     }
     
     public void delete() {
-        getBean(getDao().getClass(), "").delete();
+        T bean = (T) getBean(getDao().getClass(), "");
+        updateBean(bean);
+        bean.delete();
         renderSucessResult();
     }
 
@@ -99,7 +146,11 @@ public abstract class BaseActionController<T extends Model<T>> extends Controlle
         //Table table; = TableMapping.me().getTable(getDao().getClass());
         List<String> paramNames = getParams();
         for (String paramName : paramNames) {
-            paramMap.put(paramName, getPara(paramName));
+            if (StringUtils.contains(paramName, ".")) {
+                paramMap.put(paramName, getPara(paramName));
+            } else {
+                paramMap.put("t." + paramName, getPara(paramName));
+            }
 //            String tableAlias = "";
 //            String columnName = paramName;
 //            // column name like goods.name, goods_cat.name, goods.name_lk the str before "." is table alias, after "." is column with operator
